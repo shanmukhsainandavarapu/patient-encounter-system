@@ -1,0 +1,50 @@
+name: CI Pipeline
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2
+        with:
+          poetry-version: "1.8.3"
+
+      - name: Install dependencies
+        run: poetry install
+
+      # ------------------
+      # LINT
+      # ------------------
+      - name: Lint with Ruff
+        run: poetry run ruff check src
+
+      # ------------------
+      # FORMAT CHECK
+      # ------------------
+      - name: Format check (Black)
+        run: poetry run black --check src tests
+
+      # ------------------
+      # SECURITY SCAN
+      # ------------------
+      - name: Security scan (Bandit)
+        run: poetry run bandit -r src
+
+      # ------------------
+      # TESTS + COVERAGE
+      # ------------------
+      - name: Run tests
+        run: poetry run pytest --cov=patient_encounter_system --cov-fail-under=80
