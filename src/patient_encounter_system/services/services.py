@@ -10,10 +10,10 @@ from patient_encounter_system.models.models import (
 )
 
 
-
 # =========================
 # PATIENT SERVICES
 # =========================
+
 
 def create_patient(db: Session, data):
     patient = Patient(
@@ -37,6 +37,7 @@ def get_patient(db: Session, patient_id: int):
 # DOCTOR SERVICES
 # =========================
 
+
 def create_doctor(db: Session, data):
     doctor = Doctor(
         full_name=data.full_name,
@@ -57,6 +58,7 @@ def get_doctor(db: Session, doctor_id: int):
 # =========================
 # APPOINTMENT SERVICES
 # =========================
+
 
 def create_appointment(db: Session, data):
     """
@@ -89,34 +91,29 @@ def create_appointment(db: Session, data):
         raise ValueError("Patient not found")
 
     # ---- Overlap check (FINAL CORRECT VERSION) ----
-    overlap_stmt = select(Appointment).where(
-        Appointment.doctor_id == data.doctor_id
-    )
+    overlap_stmt = select(Appointment).where(Appointment.doctor_id == data.doctor_id)
 
     appointments = db.execute(overlap_stmt).scalars().all()
 
     for appt in appointments:
         existing_start = appt.start_time
 
-    # FIX: SQLite returns naive datetime
+        # FIX: SQLite returns naive datetime
         if existing_start.tzinfo is None:
             existing_start = existing_start.replace(tzinfo=timezone.utc)
 
-        existing_end = existing_start + timedelta(
-            minutes=appt.duration_minutes
-    )
+        existing_end = existing_start + timedelta(minutes=appt.duration_minutes)
 
         if existing_start < end_time and existing_end > start_time:
             raise ValueError("Appointment conflict")
 
-
     # ---- Transaction-safe insert ----
     appt = Appointment(
-    patient_id=data.patient_id,
-    doctor_id=data.doctor_id,
-    start_time=start_time,
-    duration_minutes=data.duration_minutes,
-)
+        patient_id=data.patient_id,
+        doctor_id=data.doctor_id,
+        start_time=start_time,
+        duration_minutes=data.duration_minutes,
+    )
 
     db.add(appt)
     db.commit()
@@ -125,10 +122,10 @@ def create_appointment(db: Session, data):
     return appt
 
 
-
 # =========================
 # SCHEDULE QUERY
 # =========================
+
 
 def get_appointments_by_date(
     db: Session,

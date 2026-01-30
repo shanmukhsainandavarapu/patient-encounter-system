@@ -29,9 +29,7 @@ def test_past_appointment_rejected(client):
     pid = create_patient(client)
     did = create_doctor(client)
 
-    past = (
-        datetime.now(timezone.utc) - timedelta(days=1)
-    ).isoformat()
+    past = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
 
     r = client.post(
         "/appointments",
@@ -50,9 +48,7 @@ def test_overlap_conflict(client):
     pid = create_patient(client)
     did = create_doctor(client)
 
-    start = (
-        datetime.now(timezone.utc) + timedelta(days=1)
-    )
+    start = datetime.now(timezone.utc) + timedelta(days=1)
 
     client.post(
         "/appointments",

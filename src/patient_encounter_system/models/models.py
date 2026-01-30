@@ -7,12 +7,10 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Index,
-    
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from patient_encounter_system.database import Base
-
 
 
 # =========================
@@ -126,6 +124,4 @@ class Appointment(Base):
     doctor = relationship("Doctor", back_populates="appointments")
 
     # Indexes for performance
-    __table_args__ = (
-        Index("idx_doctor_start", "doctor_id", "start_time"),
-    )
+    __table_args__ = (Index("idx_doctor_start", "doctor_id", "start_time"),)
