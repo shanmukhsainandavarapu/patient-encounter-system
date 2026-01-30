@@ -32,6 +32,7 @@ Base.metadata.create_all(bind=engine)
 # PATIENT APIs
 # =========================
 
+
 @app.post(
     "/patients",
     response_model=PatientRead,
@@ -73,6 +74,7 @@ def get_patient_api(
 # DOCTOR APIs
 # =========================
 
+
 @app.post(
     "/doctors",
     response_model=DoctorRead,
@@ -107,6 +109,7 @@ def get_doctor_api(
 # =========================
 # APPOINTMENT APIs
 # =========================
+
 
 @app.post(
     "/appointments",

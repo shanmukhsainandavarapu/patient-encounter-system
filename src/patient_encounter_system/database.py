@@ -30,9 +30,9 @@ DATABASE_URL = URL.create(
 # -------------------------
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,      # avoids stale connections
-    pool_recycle=3600,       # recycle connections hourly
-    echo=False,              # set True for debugging SQL
+    pool_pre_ping=True,  # avoids stale connections
+    pool_recycle=3600,  # recycle connections hourly
+    echo=False,  # set True for debugging SQL
     future=True,
 )
 
@@ -46,11 +46,13 @@ SessionLocal = sessionmaker(
     expire_on_commit=False,
 )
 
+
 # -------------------------
 # Base Class
 # -------------------------
 class Base(DeclarativeBase):
     pass
+
 
 # -------------------------
 # Dependency for FastAPI
