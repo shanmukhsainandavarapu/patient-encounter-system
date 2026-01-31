@@ -12,3 +12,4 @@ tests/__pycache__/test_doctors.cpython-310-pytest-9.0.2.pyc
 tests/__pycache__/test_patients.cpython-310-pytest-9.0.2.pyc
 src/patient_encounter_system/__pycache__/__init__.cpython-310.pyc
 src/patient_encounter_system/services/__pycache__/__init__.cpython-310.pyc
+.env

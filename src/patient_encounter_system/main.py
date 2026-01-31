@@ -25,8 +25,11 @@ from patient_encounter_system.services.services import (
 
 app = FastAPI(title="Medical Encounter Management System")
 
-# create tables (for dev/testing)
-Base.metadata.create_all(bind=engine)
+
+@app.on_event("startup")
+def on_startup():
+    Base.metadata.create_all(bind=engine)
+
 
 # =========================
 # PATIENT APIs

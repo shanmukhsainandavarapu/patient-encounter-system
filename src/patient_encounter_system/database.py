@@ -5,13 +5,18 @@ from sqlalchemy.engine import URL
 # -------------------------
 # DB CONFIG (Your config)
 # -------------------------
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
 DB_CONFIG = {
-    "host": "cp-15.webhostbox.net",
-    "user": "mongouhd_evernorth",
-    "password": "U*dgQkKRuEHe",
-    "database": "mongouhd_evernorth",
-    "port": 3306,
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME"),
+    "host": os.getenv("DB_HOST", "localhost"),
+    "port": int(os.getenv("DB_PORT", 3306)),
 }
+
 
 # -------------------------
 # Build MySQL URL
