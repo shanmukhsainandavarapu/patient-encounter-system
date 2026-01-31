@@ -216,10 +216,6 @@ Suitable for GitHub Actions CI pipelines.
 
 ## 👤 Author
 
-Mukesh
+Shanmukh
 
----
 
-## 📄 License
-
-This project is for learning and training purposes.
