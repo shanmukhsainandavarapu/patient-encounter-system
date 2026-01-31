@@ -7,6 +7,7 @@ from sqlalchemy.engine import URL
 # -------------------------
 import os
 from dotenv import load_dotenv
+
 load_dotenv()
 
 DB_CONFIG = {
