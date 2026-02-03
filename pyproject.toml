@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Patient encounter management backend using FastAPI"
 authors = ["Mukesh <Kumarmukeshmj143@gmail.com>"]
 readme = "README.md"
-packages = [{ include = "patient_encounter_system", from = "src" }]
+
+
+package-mode = false
+
 
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"
@@ -17,6 +20,7 @@ mysql-connector-python = "^9.6.0"
 pymysql = "^1.1.2"
 pydantic = { version = "^2.12.5", extras = ["email"] }
 
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.2"
 pytest-cov = "^7.0.0"
@@ -26,10 +30,12 @@ httpx = "^0.28.1"
 black = "^24.0.0"
 bandit = "^1.7.0"
 
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
-addopts = "-v --cov=patient_encounter_system --cov-report=term-missing"
+addopts = "-v --cov=src --cov-report=term-missing"
+
 
 [build-system]
 requires = ["poetry-core>=2.0.0"]

@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta, date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from patient_encounter_system.models.models import (
+from models.models import (
     Patient,
     Doctor,
     Appointment,

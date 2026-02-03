@@ -4,9 +4,9 @@ from fastapi import FastAPI, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 
 # ✅ absolute imports (correct for src layout)
-from patient_encounter_system.database import engine, get_db
-from patient_encounter_system.models.models import Base
-from patient_encounter_system.schemas.schemas import (
+from database import engine, get_db
+from models.models import Base
+from schemas.schemas import (
     PatientCreate,
     PatientRead,
     DoctorCreate,
@@ -14,7 +14,7 @@ from patient_encounter_system.schemas.schemas import (
     AppointmentCreate,
     AppointmentRead,
 )
-from patient_encounter_system.services.services import (
+from services.services import (
     create_patient,
     get_patient,
     create_doctor,
