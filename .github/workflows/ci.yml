@@ -47,4 +47,4 @@ jobs:
       # TESTS + COVERAGE
       # ------------------
       - name: Run tests
-        run: poetry run pytest --cov=patient_encounter_system --cov-fail-under=80
+        run: poetry run pytest --cov=src --cov-fail-under=80
