@@ -19,6 +19,8 @@ uvicorn = "^0.40.0"
 mysql-connector-python = "^9.6.0"
 pymysql = "^1.1.2"
 pydantic = { version = "^2.12.5", extras = ["email"] }
+python-dotenv = "^1.0.1"
+
 
 
 [tool.poetry.group.dev.dependencies]
