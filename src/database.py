@@ -1,46 +1,55 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.engine import URL
-
-# -------------------------
-# DB CONFIG (Your config)
-# -------------------------
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
-
-DB_CONFIG = {
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "database": os.getenv("DB_NAME"),
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": int(os.getenv("DB_PORT", 3306)),
-}
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not installed in CI, that's fine
 
 
 # -------------------------
-# Build MySQL URL
+# Decide DB TYPE
 # -------------------------
-DATABASE_URL = URL.create(
-    drivername="mysql+pymysql",
-    username=DB_CONFIG["user"],
-    password=DB_CONFIG["password"],
-    host=DB_CONFIG["host"],
-    port=DB_CONFIG["port"],
-    database=DB_CONFIG["database"],
-)
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", 3306))
+
+
+USE_MYSQL = all([DB_USER, DB_PASSWORD, DB_NAME])
+
+
+# -------------------------
+# Build DATABASE URL
+# -------------------------
+if USE_MYSQL:
+    DATABASE_URL = URL.create(
+        drivername="mysql+pymysql",
+        username=DB_USER,
+        password=DB_PASSWORD,
+        host=DB_HOST,
+        port=DB_PORT,
+        database=DB_NAME,
+    )
+else:
+    # ✅ SAFE FALLBACK (CI / Instructor / Tests)
+    DATABASE_URL = "sqlite:///./test.db"
+
 
 # -------------------------
 # Engine
 # -------------------------
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,  # avoids stale connections
-    pool_recycle=3600,  # recycle connections hourly
-    echo=False,  # set True for debugging SQL
+    connect_args={"check_same_thread": False} if "sqlite" in str(DATABASE_URL) else {},
+    pool_pre_ping=True,
     future=True,
 )
+
 
 # -------------------------
 # Session Factory
@@ -61,7 +70,7 @@ class Base(DeclarativeBase):
 
 
 # -------------------------
-# Dependency for FastAPI
+# Dependency
 # -------------------------
 def get_db():
     db = SessionLocal()
