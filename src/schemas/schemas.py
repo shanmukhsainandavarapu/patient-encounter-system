@@ -1,25 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
-from datetime import timedelta
-from pydantic import (
-    BaseModel,
-    EmailStr,
-    Field,
-    field_validator,
-    ConfigDict,
-)
+from pydantic import BaseModel, EmailStr, Field, field_validator, ConfigDict
 
 
-# =========================
-# COMMON CONFIG
-# =========================
 class BaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# =========================
-# PATIENT SCHEMAS
-# =========================
 class PatientCreate(BaseSchema):
     first_name: str = Field(min_length=1, max_length=100)
     last_name: str = Field(min_length=1, max_length=100)
@@ -42,9 +29,6 @@ class PatientRead(BaseSchema):
     updated_timestamp: datetime
 
 
-# =========================
-# DOCTOR SCHEMAS
-# =========================
 class DoctorCreate(BaseSchema):
     full_name: str = Field(min_length=1, max_length=200)
     specialization: str = Field(min_length=1, max_length=150)
@@ -58,16 +42,12 @@ class DoctorRead(BaseSchema):
     created_timestamp: datetime
 
 
-# =========================
-# APPOINTMENT SCHEMAS
-# =========================
 class AppointmentCreate(BaseSchema):
     patient_id: int = Field(gt=0)
     doctor_id: int = Field(gt=0)
     start_time: datetime
     duration_minutes: int = Field(ge=15, le=180)
 
-    # Ensure timezone-aware datetime
     @field_validator("start_time")
     @classmethod
     def must_be_timezone_aware(cls, v: datetime):
@@ -84,20 +64,13 @@ class AppointmentRead(BaseSchema):
     duration_minutes: int
     created_timestamp: datetime
 
-    # Derived field (not stored in DB)
     end_time: Optional[datetime] = None
 
     @field_validator("end_time", mode="before")
     @classmethod
     def compute_end_time(cls, v, info):
-        if v is not None:
-            return v
-
-        data = info.data
-        start = data.get("start_time")
-        duration = data.get("duration_minutes")
-
+        start = info.data.get("start_time")
+        duration = info.data.get("duration_minutes")
         if start and duration:
             return start + timedelta(minutes=duration)
-
         return None

@@ -5,11 +5,21 @@ from sqlalchemy.orm import Session
 from models.models import Patient, Doctor, Appointment
 
 
+def _ensure_utc(dt: datetime) -> datetime:
+    """
+    SQLite strips timezone info.
+    This helper ensures all datetimes are UTC-aware before comparison.
+    """
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 def create_patient(db: Session, data):
     patient = Patient(
         first_name=data.first_name,
         last_name=data.last_name,
-        email=data.email.lower(),
+        email=data.email,
         phone_number=data.phone_number,
     )
     db.add(patient)
@@ -39,7 +49,8 @@ def get_doctor(db: Session, doctor_id: int):
 
 
 def create_appointment(db: Session, data):
-    start_time = data.start_time.astimezone(timezone.utc)
+    # Normalize incoming datetime
+    start_time = _ensure_utc(data.start_time)
     end_time = start_time + timedelta(minutes=data.duration_minutes)
 
     if start_time <= datetime.now(timezone.utc):
@@ -56,16 +67,13 @@ def create_appointment(db: Session, data):
         raise ValueError("Patient not found")
 
     stmt = select(Appointment).where(Appointment.doctor_id == data.doctor_id)
-    appointments = db.execute(stmt).scalars().all()
+    existing_appointments = db.execute(stmt).scalars().all()
 
-    for appt in appointments:
-        existing_start = appt.start_time
-        if existing_start.tzinfo is None:
-            existing_start = existing_start.replace(tzinfo=timezone.utc)
-
+    for appt in existing_appointments:
+        existing_start = _ensure_utc(appt.start_time)
         existing_end = existing_start + timedelta(minutes=appt.duration_minutes)
 
-        # ✅ Correct overlap logic (allows back-to-back)
+        # Overlap logic (allows back-to-back)
         if start_time < existing_end and end_time > existing_start:
             raise ValueError("Appointment conflict")
 
@@ -88,7 +96,9 @@ def get_appointments_by_date(
     doctor_id: int | None = None,
 ):
     start_dt = datetime.combine(
-        query_date, datetime.min.time(), tzinfo=timezone.utc
+        query_date,
+        datetime.min.time(),
+        tzinfo=timezone.utc,
     )
     end_dt = start_dt + timedelta(days=1)
 

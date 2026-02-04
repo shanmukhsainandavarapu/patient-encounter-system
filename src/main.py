@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException, status, Query
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from datetime import date
+from contextlib import asynccontextmanager
 
 from database import engine, get_db
 from models.models import Base
@@ -21,12 +22,17 @@ from services.services import (
     get_appointments_by_date,
 )
 
-app = FastAPI(title="Medical Encounter Management System")
 
-
-@app.on_event("startup")
-def on_startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(
+    title="Medical Encounter Management System",
+    lifespan=lifespan,
+)
 
 
 @app.post("/patients", response_model=PatientRead, status_code=201)
@@ -47,7 +53,10 @@ def get_patient_api(patient_id: int, db: Session = Depends(get_db)):
 
 @app.post("/doctors", response_model=DoctorRead, status_code=201)
 def create_doctor_api(payload: DoctorCreate, db: Session = Depends(get_db)):
-    return create_doctor(db, payload)
+    try:
+        return create_doctor(db, payload)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @app.get("/doctors/{doctor_id}", response_model=DoctorRead)
@@ -60,7 +69,8 @@ def get_doctor_api(doctor_id: int, db: Session = Depends(get_db)):
 
 @app.post("/appointments", response_model=AppointmentRead, status_code=201)
 def create_appointment_api(
-    payload: AppointmentCreate, db: Session = Depends(get_db)
+    payload: AppointmentCreate,
+    db: Session = Depends(get_db),
 ):
     try:
         return create_appointment(db, payload)
