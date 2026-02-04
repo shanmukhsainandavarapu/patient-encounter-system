@@ -3,51 +3,56 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.engine import URL
 
-# Load env only if present
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except Exception:
-    pass
+
+# =========================
+# DATABASE URL RESOLUTION
+# =========================
+
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_NAME = os.getenv("DB_NAME")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = int(os.getenv("DB_PORT", 3306))
 
 
-USE_MYSQL = all([
-    os.getenv("DB_USER"),
-    os.getenv("DB_PASSWORD"),
-    os.getenv("DB_NAME"),
-])
-
-# -------------------------
-# DATABASE URL
-# -------------------------
-if USE_MYSQL:
+# 👉 If MySQL env vars exist → use MySQL
+# 👉 Else → fallback to SQLite (evaluator / CI safe)
+if DB_USER and DB_PASSWORD and DB_NAME:
     DATABASE_URL = URL.create(
         drivername="mysql+pymysql",
-        username=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST", "localhost"),
-        port=int(os.getenv("DB_PORT", 3306)),
-        database=os.getenv("DB_NAME"),
+        username=DB_USER,
+        password=DB_PASSWORD,
+        host=DB_HOST,
+        port=DB_PORT,
+        database=DB_NAME,
     )
 else:
-    # 🔥 Fallback for Swagger / Evaluator
-    DATABASE_URL = "sqlite:///./app.db"
+    DATABASE_URL = URL.create(
+        drivername="sqlite",
+        database="app.db",
+    )
 
-# -------------------------
-# Engine
-# -------------------------
+
+# =========================
+# ENGINE CONFIG
+# =========================
+
+# SQLite needs special args
+connect_args = {}
+if DATABASE_URL.drivername.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False}
-    if DATABASE_URL.startswith("sqlite")
-    else {},
+    connect_args=connect_args,
     future=True,
     echo=False,
 )
 
-# -------------------------
-# Session
-# -------------------------
+
+# =========================
+# SESSION FACTORY
+# =========================
 SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
@@ -55,15 +60,17 @@ SessionLocal = sessionmaker(
     expire_on_commit=False,
 )
 
-# -------------------------
-# Base
-# -------------------------
+
+# =========================
+# BASE CLASS
+# =========================
 class Base(DeclarativeBase):
     pass
 
-# -------------------------
-# Dependency
-# -------------------------
+
+# =========================
+# FASTAPI DEPENDENCY
+# =========================
 def get_db():
     db = SessionLocal()
     try:
