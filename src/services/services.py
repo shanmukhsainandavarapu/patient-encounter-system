@@ -78,9 +78,7 @@ def create_appointment(db: Session, data):
         raise ValueError("Patient not found")
 
     # ---- Overlap check (CORRECT + FINAL) ----
-    stmt = select(Appointment).where(
-        Appointment.doctor_id == data.doctor_id
-    )
+    stmt = select(Appointment).where(Appointment.doctor_id == data.doctor_id)
     existing_appointments = db.execute(stmt).scalars().all()
 
     for appt in existing_appointments:
@@ -90,9 +88,7 @@ def create_appointment(db: Session, data):
         if existing_start.tzinfo is None:
             existing_start = existing_start.replace(tzinfo=timezone.utc)
 
-        existing_end = existing_start + timedelta(
-            minutes=appt.duration_minutes
-        )
+        existing_end = existing_start + timedelta(minutes=appt.duration_minutes)
 
         # Overlap rule
         # Allow exact back-to-back (start == existing_end)
