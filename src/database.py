@@ -1,58 +1,53 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.engine import URL
-import os
 
+# Optional: only needed locally
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
-except ImportError:
-    pass  # dotenv not installed in CI, that's fine
+except Exception:
+    pass
 
 
 # -------------------------
-# Decide DB TYPE
+# Decide DB type
 # -------------------------
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = int(os.getenv("DB_PORT", 3306))
 
-
-USE_MYSQL = all([DB_USER, DB_PASSWORD, DB_NAME])
-
+USE_SQLITE = not all([DB_USER, DB_PASSWORD, DB_NAME])
 
 # -------------------------
-# Build DATABASE URL
+# Build DB URL
 # -------------------------
-if USE_MYSQL:
+if USE_SQLITE:
+    DATABASE_URL = "sqlite:///./app.db"
+else:
     DATABASE_URL = URL.create(
         drivername="mysql+pymysql",
         username=DB_USER,
         password=DB_PASSWORD,
-        host=DB_HOST,
-        port=DB_PORT,
+        host=os.getenv("DB_HOST", "localhost"),
+        port=int(os.getenv("DB_PORT", 3306)),
         database=DB_NAME,
     )
-else:
-    # ✅ SAFE FALLBACK (CI / Instructor / Tests)
-    DATABASE_URL = "sqlite:///./test.db"
-
 
 # -------------------------
 # Engine
 # -------------------------
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in str(DATABASE_URL) else {},
+    connect_args={"check_same_thread": False} if USE_SQLITE else {},
     pool_pre_ping=True,
-    future=True,
+    echo=False,
 )
 
-
 # -------------------------
-# Session Factory
+# Session
 # -------------------------
 SessionLocal = sessionmaker(
     bind=engine,
@@ -63,7 +58,7 @@ SessionLocal = sessionmaker(
 
 
 # -------------------------
-# Base Class
+# Base
 # -------------------------
 class Base(DeclarativeBase):
     pass

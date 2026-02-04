@@ -1,9 +1,7 @@
-from datetime import date
-
 from fastapi import FastAPI, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from datetime import date
 
-# ✅ absolute imports (correct for src layout)
 from database import engine, get_db
 from models.models import Base
 from schemas.schemas import (
