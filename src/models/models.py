@@ -1,14 +1,15 @@
 from datetime import datetime, timezone
 
 from sqlalchemy import (
-    String,
+    Column,
     Integer,
+    String,
     Boolean,
     DateTime,
     ForeignKey,
     Index,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import relationship
 
 from database import Base
 
@@ -17,39 +18,32 @@ from database import Base
 # PATIENT MODEL
 # =========================
 class Patient(Base):
-    __tablename__ = "Shanmukh_patients"
+    __tablename__ = "patients"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
 
-    first_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
 
-    email: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
-        unique=True,
-    )
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    phone_number = Column(String(20), nullable=False)
 
-    phone_number: Mapped[str] = mapped_column(String(20), nullable=False)
-
-    created_timestamp: Mapped[datetime] = mapped_column(
+    created_timestamp = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
-
-    updated_timestamp: Mapped[datetime] = mapped_column(
+    updated_timestamp = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 
-    # Relationships
     appointments = relationship(
         "Appointment",
         back_populates="patient",
-        passive_deletes=True,
+        cascade="all, delete-orphan",
     )
 
 
@@ -57,21 +51,16 @@ class Patient(Base):
 # DOCTOR MODEL
 # =========================
 class Doctor(Base):
-    __tablename__ = "Shanmukh_doctors"
+    __tablename__ = "doctors"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
 
-    full_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    full_name = Column(String(200), nullable=False)
+    specialization = Column(String(150), nullable=False)
 
-    specialization: Mapped[str] = mapped_column(String(150), nullable=False)
+    active = Column(Boolean, default=True, nullable=False)
 
-    active: Mapped[bool] = mapped_column(
-        Boolean,
-        default=True,
-        nullable=False,
-    )
-
-    created_timestamp: Mapped[datetime] = mapped_column(
+    created_timestamp = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
@@ -80,7 +69,7 @@ class Doctor(Base):
     appointments = relationship(
         "Appointment",
         back_populates="doctor",
-        passive_deletes=True,
+        cascade="all, delete-orphan",
     )
 
 
@@ -88,40 +77,45 @@ class Doctor(Base):
 # APPOINTMENT MODEL
 # =========================
 class Appointment(Base):
-    __tablename__ = "Shanmukh_appointments"
+    __tablename__ = "appointments"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
 
-    patient_id: Mapped[int] = mapped_column(
-        ForeignKey("Shanmukh_patients.id", ondelete="RESTRICT"),
+    patient_id = Column(
+        Integer,
+        ForeignKey("patients.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
     )
 
-    doctor_id: Mapped[int] = mapped_column(
-        ForeignKey("Shanmukh_doctors.id", ondelete="RESTRICT"),
+    doctor_id = Column(
+        Integer,
+        ForeignKey("doctors.id", ondelete="CASCADE"),
         nullable=False,
+        index=True,
     )
 
-    start_time: Mapped[datetime] = mapped_column(
+    start_time = Column(
         DateTime(timezone=True),
         nullable=False,
-        index=True,  # required by spec
+        index=True,
     )
 
-    duration_minutes: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-    )
+    duration_minutes = Column(Integer, nullable=False)
 
-    created_timestamp: Mapped[datetime] = mapped_column(
+    created_timestamp = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 
-    # Relationships
     patient = relationship("Patient", back_populates="appointments")
     doctor = relationship("Doctor", back_populates="appointments")
 
-    # Indexes for performance
-    __table_args__ = (Index("idx_doctor_start", "doctor_id", "start_time"),)
+
+# Helpful composite index for conflict checks
+Index(
+    "ix_appointments_doctor_start",
+    Appointment.doctor_id,
+    Appointment.start_time,
+)

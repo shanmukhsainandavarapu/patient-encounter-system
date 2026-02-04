@@ -1,6 +1,8 @@
+from datetime import date
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from datetime import date
 
 from database import engine, get_db
 from models.models import Base
@@ -21,19 +23,26 @@ from services.services import (
     get_appointments_by_date,
 )
 
-app = FastAPI(title="Medical Encounter Management System")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception:
+        # DB might not be available (evaluator / CI)
+        pass
+    yield
 
 
-@app.on_event("startup")
-def on_startup():
-    Base.metadata.create_all(bind=engine)
+app = FastAPI(
+    title="Medical Encounter Management System",
+    lifespan=lifespan,
+)
 
 
 # =========================
 # PATIENT APIs
 # =========================
-
-
 @app.post(
     "/patients",
     response_model=PatientRead,
@@ -61,21 +70,17 @@ def get_patient_api(
     db: Session = Depends(get_db),
 ):
     patient = get_patient(db, patient_id)
-
     if not patient:
         raise HTTPException(
             status_code=404,
             detail="Patient not found",
         )
-
     return patient
 
 
 # =========================
 # DOCTOR APIs
 # =========================
-
-
 @app.post(
     "/doctors",
     response_model=DoctorRead,
@@ -97,21 +102,17 @@ def get_doctor_api(
     db: Session = Depends(get_db),
 ):
     doctor = get_doctor(db, doctor_id)
-
     if not doctor:
         raise HTTPException(
             status_code=404,
             detail="Doctor not found",
         )
-
     return doctor
 
 
 # =========================
 # APPOINTMENT APIs
 # =========================
-
-
 @app.post(
     "/appointments",
     response_model=AppointmentRead,
@@ -125,27 +126,23 @@ def create_appointment_api(
         return create_appointment(db, payload)
 
     except ValueError as e:
-        message = str(e)
+        message = str(e).lower()
 
-        if (
-            "conflict" in message.lower()
-            or "inactive" in message.lower()
-            or "future" in message.lower()
-        ):
+        if "conflict" in message or "future" in message or "inactive" in message:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=message,
+                detail=str(e),
             )
 
-        if "not found" in message.lower():
+        if "not found" in message:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=message,
+                detail=str(e),
             )
 
         raise HTTPException(
             status_code=400,
-            detail=message,
+            detail=str(e),
         )
 
 

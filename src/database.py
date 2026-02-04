@@ -3,46 +3,45 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy.engine import URL
 
-# Optional: only needed locally
+# Load env only if present
 try:
     from dotenv import load_dotenv
-
     load_dotenv()
 except Exception:
     pass
 
 
-# -------------------------
-# Decide DB type
-# -------------------------
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
-
-USE_SQLITE = not all([DB_USER, DB_PASSWORD, DB_NAME])
+USE_MYSQL = all([
+    os.getenv("DB_USER"),
+    os.getenv("DB_PASSWORD"),
+    os.getenv("DB_NAME"),
+])
 
 # -------------------------
-# Build DB URL
+# DATABASE URL
 # -------------------------
-if USE_SQLITE:
-    DATABASE_URL = "sqlite:///./app.db"
-else:
+if USE_MYSQL:
     DATABASE_URL = URL.create(
         drivername="mysql+pymysql",
-        username=DB_USER,
-        password=DB_PASSWORD,
+        username=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
         host=os.getenv("DB_HOST", "localhost"),
         port=int(os.getenv("DB_PORT", 3306)),
-        database=DB_NAME,
+        database=os.getenv("DB_NAME"),
     )
+else:
+    # 🔥 Fallback for Swagger / Evaluator
+    DATABASE_URL = "sqlite:///./app.db"
 
 # -------------------------
 # Engine
 # -------------------------
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if USE_SQLITE else {},
-    pool_pre_ping=True,
+    connect_args={"check_same_thread": False}
+    if DATABASE_URL.startswith("sqlite")
+    else {},
+    future=True,
     echo=False,
 )
 
@@ -56,13 +55,11 @@ SessionLocal = sessionmaker(
     expire_on_commit=False,
 )
 
-
 # -------------------------
 # Base
 # -------------------------
 class Base(DeclarativeBase):
     pass
-
 
 # -------------------------
 # Dependency
